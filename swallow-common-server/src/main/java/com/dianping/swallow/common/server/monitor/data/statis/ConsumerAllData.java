@@ -3,13 +3,11 @@ package com.dianping.swallow.common.server.monitor.data.statis;
 import com.dianping.swallow.common.internal.monitor.impl.AbstractMapMergeable;
 import com.dianping.swallow.common.internal.monitor.impl.MapMergeableImpl;
 import com.dianping.swallow.common.server.monitor.data.ConsumerStatisRetriever;
+import com.dianping.swallow.common.server.monitor.data.StatisFunctionType;
 import com.dianping.swallow.common.server.monitor.data.StatisType;
 import com.dianping.swallow.common.server.monitor.data.structure.*;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.NavigableMap;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentSkipListMap;
 
 /**
@@ -66,20 +64,19 @@ public class ConsumerAllData extends AbstractAllData<ConsumerTopicData, Consumer
 
     @Override
     public Set<String> getConsumerIds(String topic, boolean includeTotal) {
-
-        Set<String> topics;
+        Set<String> consumerIds = new HashSet<String>();
         for (ConsumerServerStatisData csd : servers.values()) {
             if (csd != null) {
-                topics = csd.keySet(false);
+                Set<String> topics = csd.keySet(false);
                 if (topics != null && topics.contains(topic)) {
                     ConsumerTopicStatisData ctss = (ConsumerTopicStatisData) csd.getValue(topic);
                     if (ctss != null) {
-                        return ctss.keySet(includeTotal);
+                        consumerIds.addAll(ctss.keySet(includeTotal));
                     }
                 }
             }
         }
-        return null;
+        return consumerIds;
     }
 
     @Override
@@ -105,7 +102,7 @@ public class ConsumerAllData extends AbstractAllData<ConsumerTopicData, Consumer
         Map<String, NavigableMap<Long, StatisData>> tmpResult = getAllQpx(type, topic, includeTotal);
 
         for (Map.Entry<String, NavigableMap<Long, StatisData>> entry : tmpResult.entrySet()) {
-            map.put(entry.getKey(), convertStatisData(entry.getValue()));
+            map.put(entry.getKey(), convertData(entry.getValue(), StatisFunctionType.DELAY));
         }
         return map;
     }
@@ -121,7 +118,7 @@ public class ConsumerAllData extends AbstractAllData<ConsumerTopicData, Consumer
                 if (MonitorData.TOTAL_KEY.equals(cid) && !includeTotal) {
                     continue;
                 }
-                NavigableMap<Long, StatisData> qpsValue = getQpsValue(new CasKeys(server, topic, cid), type);
+                NavigableMap<Long, StatisData> qpsValue = getStatisData(new CasKeys(server, topic, cid), type);
                 if (qpsValue == null) {
                     continue;
                 }

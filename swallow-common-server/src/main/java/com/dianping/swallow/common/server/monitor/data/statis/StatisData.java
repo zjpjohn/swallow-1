@@ -1,5 +1,6 @@
-package com.dianping.swallow.common.server.monitor.data.structure;
+package com.dianping.swallow.common.server.monitor.data.statis;
 
+import com.dianping.swallow.common.internal.codec.impl.JsonBinder;
 import com.dianping.swallow.common.internal.monitor.Mergeable;
 import com.dianping.swallow.common.server.monitor.collector.AbstractCollector;
 import com.dianping.swallow.common.server.monitor.data.QPX;
@@ -23,18 +24,24 @@ public class StatisData implements Mergeable {
     /*从运行开始后的消息总条数*/
     private Long totalCount = 0L;
 
+    private Long msgSize = 0L;
+
+    private Long totalMsgSize = 0L;
+
     @JsonIgnore
     private Byte intervalCount = 6;
 
-    public StatisData(){
+    public StatisData() {
 
     }
 
-    public StatisData(Long delay, Long totalDelay, Long count, Long totalCount, Byte intervalCount) {
+    public StatisData(Long delay, Long totalDelay, Long count, Long totalCount, Long msgSize, Long totalMsgSize, Byte intervalCount) {
         this.delay = delay;
         this.totalDelay = totalDelay;
         this.count = count;
         this.totalCount = totalCount;
+        this.msgSize = msgSize;
+        this.totalMsgSize = totalMsgSize;
         this.intervalCount = intervalCount;
     }
 
@@ -54,21 +61,40 @@ public class StatisData implements Mergeable {
         return totalCount;
     }
 
+    public Long getMsgSize() {
+        return msgSize;
+    }
+
+    public Long getTotalMsgSize() {
+        return totalMsgSize;
+    }
+
     public Byte getIntervalCount() {
         return intervalCount;
     }
 
     public Long getQpx(QPX qpx) {
-        if(intervalCount <= 0){
-            throw new RuntimeException("intervalCount should be positive");
+        switch (qpx) {
+            case MINUTE:
+                return this.count / (intervalCount * AbstractCollector.SEND_INTERVAL) * 60;
+            case SECOND:
+            default:
+                return this.count / (intervalCount * AbstractCollector.SEND_INTERVAL);
         }
-        if (qpx == QPX.MINUTE) {
-            return this.count / (intervalCount * AbstractCollector.SEND_INTERVAL) * 60;
-        } else if (qpx == QPX.SECOND) {
-            return this.count / (intervalCount * AbstractCollector.SEND_INTERVAL);
-        } else {
-            throw new UnsupportedOperationException("unsupported QPX type");
+    }
+
+    public Long getAvgDelay() {
+        if (count <= 0) {
+            return 0L;
         }
+        return this.delay / count;
+    }
+
+    public Long getAvgMsgSize() {
+        if (count <= 0) {
+            return 0L;
+        }
+        return this.msgSize / count;
     }
 
     @Override
@@ -78,15 +104,12 @@ public class StatisData implements Mergeable {
         }
 
         StatisData toMerge = (StatisData) merge;
-        Long mergeCount = this.count + toMerge.count;
 
-        if (mergeCount <= 0) {
-            this.delay = 0L;
-        } else {
-            this.delay = (this.delay * this.count + toMerge.delay * toMerge.count) / mergeCount;
-        }
-        this.count = mergeCount;
+        this.delay += toMerge.getDelay();
+        this.msgSize += toMerge.getMsgSize();
+        this.count += toMerge.count;
 
+        this.totalMsgSize += toMerge.totalMsgSize;
         this.totalCount += toMerge.totalCount;
         this.totalDelay += toMerge.totalDelay;
     }
@@ -96,13 +119,12 @@ public class StatisData implements Mergeable {
         throw new UnsupportedOperationException("clone not support");
     }
 
+    public boolean isDataLegal() {
+        return this.totalCount > 0 || this.totalDelay > 0 || this.totalMsgSize > 0;
+    }
+
     @Override
     public String toString() {
-        return "StatisData{" +
-                "delay=" + delay +
-                ", totalDelay=" + totalDelay +
-                ", count=" + count +
-                ", totalCount=" + totalCount +
-                '}';
+        return JsonBinder.getNonEmptyBinder().toJson(this);
     }
 }

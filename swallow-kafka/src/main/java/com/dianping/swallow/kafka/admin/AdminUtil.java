@@ -20,7 +20,7 @@ public class AdminUtil {
             AdminUtils.createTopic(zkClient, topic, partitions, replicationFactor, new Properties());
             return true;
         } catch (Exception e) {
-            logger.error("Create topic error", e);
+            logger.error("[createTopic] create topic error", e);
             return false;
         }
     }

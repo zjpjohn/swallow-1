@@ -4,7 +4,7 @@
 	<parent>
 		<groupId>com.dianping.swallow</groupId>
 		<artifactId>swallow-parent</artifactId>
-		<version>0.8.1-SNAPSHOT</version>
+		<version>0.8.1</version>
 	</parent>
 	<artifactId>swallow-test</artifactId>
 	<description>
@@ -39,6 +39,7 @@
 		<dependency>
 			<groupId>org.mongodb</groupId>
 			<artifactId>mongo-java-driver</artifactId>
+			<version>3.2.2</version>
 		</dependency>
 		<dependency>
 			<groupId>junit</groupId>
