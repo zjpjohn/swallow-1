@@ -69,7 +69,7 @@ public class EnvUtil {
         envs.add("qa");
         envs.add("prelease");
         envs.add("product");
-//        envs.add("performance");
+        envs.add("performance");
         return envs;
     }
 
